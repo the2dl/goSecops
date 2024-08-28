@@ -22,20 +22,9 @@ Because working in a terminal is faster and more efficient (for me at least).
 ### Prerequisites
 
 - Go 1.16 or later
-- Google Chronicle credentials
+- Google Chronicle (SecOps) credentials (service account JSON file)
 - VirusTotal API key
 - Claude API key
-
-### Environment Variables
-
-Set the following environment variables:
-
-- `CHRONICLE_CRED_FILE`: Path to the Google Chronicle credentials file.
-- `CHRONICLE_PROJECT_ID`: Google Chronicle project ID.
-- `CHRONICLE_INSTANCE_ID`: Google Chronicle instance ID.
-- `CHRONICLE_REGION`: Google Chronicle region (default is `us`).
-- `VIRUSTOTAL_API_KEY`: VirusTotal API key.
-- `CLAUDE_API_KEY`: Claude API key.
 
 ### Steps
 
