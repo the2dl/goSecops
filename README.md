@@ -45,12 +45,49 @@ Set the following environment variables:
     Create a `.env` file in the project root and add the required environment variables:
 
     ```sh
-    CHRONICLE_CRED_FILE=/path/to/your/chronicle/credentials.json
+    CHRONICLE_CRED_FILE=/path/to/your/chronicle/.creds
     CHRONICLE_PROJECT_ID=your-project-id
     CHRONICLE_INSTANCE_ID=your-instance-id
     CHRONICLE_REGION=us
     VIRUSTOTAL_API_KEY=your-virustotal-api-key
     CLAUDE_API_KEY=your-claude-api-key
+    ```
+
+    Sample `.env` file:
+    ```sh
+    CHRONICLE_CRED_FILE=/Users/dan/Documents/goSecops/.creds
+    CHRONICLE_PROJECT_ID=12345678912345
+    CHRONICLE_INSTANCE_ID=fc12345f-1234-3afe-ze34-f2b5dzb5ffr2
+    CHRONICLE_REGION=us
+    VIRUSTOTAL_API_KEY=8..f7215...e
+    CLAUDE_API_KEY=sk-ant-..AA
+    ```
+
+4. **Set up `.creds` file:**
+
+    Create a `.creds` file in the project root and add the required credentials:
+
+    ```sh
+    {
+        "type": "service_account",
+        "project_id": "your-project-id",
+        "private_key_id": "your-private-key-id",
+    ```
+    Sample `.creds` file:
+    ```sh
+  {
+        "type": "service_account",
+        "project_id": "your-project-name",
+        "private_key_id": "1234..keyid",
+        "private_key": "-----BEGIN PRIVATE KEY-----\privateKey]\n-----END PRIVATE KEY-----\n",
+        "client_email": "email@your-project-name.iam.gserviceaccount.com",
+        "client_id": "12243..clientid",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/email@your-project-name.iam.gserviceaccount.com",
+        "universe_domain": "googleapis.com"
+      }
     ```
 
 3. **Build the project:**
