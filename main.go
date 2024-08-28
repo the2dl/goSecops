@@ -26,11 +26,12 @@ const (
 )
 
 const (
-	CLAUDE_API_URL = "https://api.anthropic.com/v1/messages"
-	CLAUDE_PROMPT  = `
+	CHATGPT_API_URL = "https://api.openai.com/v1/chat/completions"
+	CHATGPT_PROMPT  = `
 Analyze the provided JSON output from a security event detection system and create a concise summary with the following structure:
 
-OUTCOME: MALICIOUS or NOT MALICIOUS (select one). Most Security Operation Analysts work hundreds of cases per day, and the majority are false positives. That does not mean everything is not malicious, but keep that in mind when making a decision.
+## OUTCOME:
+**MALICIOUS** or **NOT MALICIOUS** (select one). Most Security Operation Analysts work hundreds of cases per day, and the majority are false positives. That does not mean everything is not malicious, but keep that in mind when making a decision.
 
 1. Event Overview:
     Detection Type
@@ -105,8 +106,6 @@ When analyzing the JSON:
 Your goal is to provide a concise, accurate summary that reflects only the information present in the provided JSON, highlighting the most relevant details for security analysis.
 `
 )
-
-var debugLogger *log.Logger
 
 var (
 	maliciousStyle = lipgloss.NewStyle().
@@ -184,8 +183,8 @@ func parseAISummary(summary string) AISummary {
 	sections := strings.Split(summary, "\n\n")
 
 	for _, section := range sections {
-		if strings.HasPrefix(section, "OUTCOME:") {
-			result.Outcome = strings.TrimSpace(strings.TrimPrefix(section, "OUTCOME:"))
+		if strings.HasPrefix(section, "## OUTCOME:") {
+			result.Outcome = strings.TrimSpace(strings.TrimPrefix(section, "## OUTCOME:"))
 		} else if strings.HasPrefix(section, "1. Event Overview:") {
 			result.EventOverview = strings.TrimSpace(strings.TrimPrefix(section, "1. Event Overview:"))
 		} else if strings.HasPrefix(section, "2. Rule Details:") {
@@ -208,9 +207,9 @@ func parseAISummary(summary string) AISummary {
 
 func renderOutcome(outcome string) string {
 	if strings.ToUpper(outcome) == "MALICIOUS" {
-		return maliciousStyle.Render("OUTCOME: MALICIOUS")
+		return maliciousStyle.Render("## OUTCOME: MALICIOUS")
 	}
-	return notMaliciousStyle.Render("OUTCOME: NOT MALICIOUS")
+	return notMaliciousStyle.Render("## OUTCOME: NOT MALICIOUS")
 }
 
 func formatEventOverview(overview string) string {
@@ -232,7 +231,7 @@ func formatDetectionDetails(details string) string {
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
-			formattedLines = append(formattedLines, "")
+			formattedLines = append(formattedLines, "") // Add extra newline between sections
 			continue
 		}
 
@@ -338,83 +337,63 @@ func (m model) renderDetectionDetailsPanel(summary AISummary) string {
 }
 
 func initDebugLogger() {
-	debugFile, err := os.OpenFile("virustotal_debug.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Printf("Error opening debug log file: %v", err)
-		return
-	}
-	debugLogger = log.New(debugFile, "", log.LstdFlags)
+	// Removed debug logger initialization
 }
 
 func debugLog(format string, v ...interface{}) {
-	if debugLogger != nil {
-		debugLogger.Printf(format, v...)
-	}
+	// Removed debug log function body
 }
 
 func queryVirusTotal(hash string, apiKey string) (bool, error) {
-	debugLog("Querying VirusTotal for hash: %s", hash)
+	// Removed debug log calls
 	url := fmt.Sprintf("https://www.virustotal.com/api/v3/files/%s", hash)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		debugLog("Error creating request: %v", err)
 		return false, err
 	}
 
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("x-apikey", apiKey)
 
-	debugLog("Sending request to VirusTotal")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		debugLog("Error sending request: %v", err)
 		return false, err
 	}
 	defer resp.Body.Close()
 
-	debugLog("Response status code: %d", resp.StatusCode)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		debugLog("Error reading response body: %v", err)
 		return false, err
 	}
-
-	debugLog("Response body: %s", string(body))
 
 	var result map[string]interface{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		debugLog("Error unmarshalling JSON: %v", err)
 		return false, err
 	}
 
 	data, ok := result["data"].(map[string]interface{})
 	if !ok {
-		debugLog("Unexpected response format: 'data' field not found or not a map")
 		return false, fmt.Errorf("unexpected response format")
 	}
 
 	attributes, ok := data["attributes"].(map[string]interface{})
 	if !ok {
-		debugLog("Unexpected response format: 'attributes' field not found or not a map")
 		return false, fmt.Errorf("unexpected response format")
 	}
 
 	lastAnalysisStats, ok := attributes["last_analysis_stats"].(map[string]interface{})
 	if !ok {
-		debugLog("Unexpected response format: 'last_analysis_stats' field not found or not a map")
 		return false, fmt.Errorf("unexpected response format")
 	}
 
 	malicious, ok := lastAnalysisStats["malicious"].(float64)
 	if !ok {
-		debugLog("Unexpected response format: 'malicious' field not found or not a float64")
 		return false, fmt.Errorf("unexpected response format")
 	}
 
-	debugLog("Malicious count: %f", malicious)
 	return malicious > 0, nil
 }
 
@@ -589,7 +568,7 @@ type model struct {
 	selectedDetection *Detection
 	spinner           spinner.Model
 	waitingForSummary bool
-	claudeApiKey      string
+	chatgptApiKey     string
 }
 
 type rulesMsg struct {
@@ -623,7 +602,7 @@ func (i detectionItem) FilterValue() string {
 	return i.detection.ID
 }
 
-func initialModel(claudeApiKey string) model {
+func initialModel(chatgptApiKey string) model {
 	ti := textinput.New()
 	ti.Placeholder = "Search rules..."
 	ti.Focus()
@@ -640,7 +619,7 @@ func initialModel(claudeApiKey string) model {
 		detectionsList:    list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0),
 		spinner:           s,
 		waitingForSummary: false,
-		claudeApiKey:      claudeApiKey,
+		chatgptApiKey:     chatgptApiKey,
 	}
 }
 
@@ -704,7 +683,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.waitingForSummary = true
 					m.viewState = "detection_summary"
 					return m, tea.Batch(
-						generateAISummaryCmd(detection, m.claudeApiKey),
+						generateAISummaryCmd(detection, m.chatgptApiKey),
 						m.spinner.Tick,
 					)
 				}
@@ -1013,7 +992,7 @@ func fetchLastWeekDetectionsCmd(ruleId string, client *http.Client) tea.Cmd {
 	}
 }
 
-func generateAISummary(detection Detection, claudeApiKey string) (string, error) {
+func generateAISummary(detection Detection, chatgptApiKey string) (string, error) {
 	jsonData, err := json.MarshalIndent(detection, "", "  ")
 	if err != nil {
 		return "", err
@@ -1061,11 +1040,11 @@ func generateAISummary(detection Detection, claudeApiKey string) (string, error)
 		vtResultsStr = "VirusTotal checks were performed, but no significant results were found. All checked hashes were not flagged as malicious."
 	}
 
-	updatedPrompt := fmt.Sprintf("%s\n\nVirusTotal Results:\n%s\n\nPlease consider the VirusTotal results when determining the OUTCOME and explaining why it was marked malicious or not malicious.", CLAUDE_PROMPT, vtResultsStr)
+	updatedPrompt := fmt.Sprintf("%s\n\nVirusTotal Results:\n%s\n\nPlease consider the VirusTotal results when determining the OUTCOME and explaining why it was marked malicious or not malicious.", CHATGPT_PROMPT, vtResultsStr)
 
 	requestBody, err := json.Marshal(map[string]interface{}{
-		"model":      "claude-3-sonnet-20240229",
-		"max_tokens": 2048,
+		"model": "gpt-4o",
+		// "max_tokens": 2048,
 		"messages": []map[string]string{
 			{
 				"role":    "user",
@@ -1077,14 +1056,14 @@ func generateAISummary(detection Detection, claudeApiKey string) (string, error)
 		return "", err
 	}
 
-	req, err := http.NewRequest("POST", CLAUDE_API_URL, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", CHATGPT_API_URL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return "", err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", claudeApiKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", chatgptApiKey))
+	// req.Header.Set("anthropic-version", "2023-06-01")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -1108,17 +1087,22 @@ func generateAISummary(detection Detection, claudeApiKey string) (string, error)
 		return "", err
 	}
 
-	content, ok := result["content"].([]interface{})
-	if !ok || len(content) == 0 {
+	choices, ok := result["choices"].([]interface{})
+	if !ok || len(choices) == 0 {
 		return "", fmt.Errorf("Unexpected response format")
 	}
 
-	firstContent, ok := content[0].(map[string]interface{})
+	firstChoice, ok := choices[0].(map[string]interface{})
 	if !ok {
-		return "", fmt.Errorf("Unexpected content format")
+		return "", fmt.Errorf("Unexpected choices format")
 	}
 
-	text, ok := firstContent["text"].(string)
+	message, ok := firstChoice["message"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("Unexpected message format")
+	}
+
+	text, ok := message["content"].(string)
 	if !ok {
 		return "", fmt.Errorf("Unexpected text format")
 	}
@@ -1126,9 +1110,9 @@ func generateAISummary(detection Detection, claudeApiKey string) (string, error)
 	return text, nil
 }
 
-func generateAISummaryCmd(detection Detection, claudeApiKey string) tea.Cmd {
+func generateAISummaryCmd(detection Detection, chatgptApiKey string) tea.Cmd {
 	return func() tea.Msg {
-		summary, err := generateAISummary(detection, claudeApiKey)
+		summary, err := generateAISummary(detection, chatgptApiKey)
 		if err != nil {
 			return errMsg(err)
 		}
@@ -1163,17 +1147,13 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	initDebugLogger()
-	debugLog("Starting the application")
-
-	claudeApiKey := os.Getenv("CLAUDE_API_KEY")
-	if claudeApiKey == "" {
-		fmt.Println("Error: CLAUDE_API_KEY environment variable is not set")
+	chatgptApiKey := os.Getenv("CHATGPT_API_KEY")
+	if chatgptApiKey == "" {
+		fmt.Println("Error: CHATGPT_API_KEY environment variable is not set")
 		os.Exit(1)
 	}
-	debugLog("Claude API key found in environment variables")
 
-	p := tea.NewProgram(initialModel(claudeApiKey), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel(chatgptApiKey), tea.WithAltScreen())
 
 	go func() {
 		ticker := time.NewTicker(time.Millisecond * 100)
