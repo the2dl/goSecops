@@ -65,29 +65,13 @@ Set the following environment variables:
 
 4. **Set up `.creds` file:**
 
-    Create a `.creds` file in the project root and add the required credentials:
+    Create a `.creds` file in the project root and add the required credentials; this is a service account JSON file from Google Cloud Console for Google SecOps:
 
     ```sh
     {
         "type": "service_account",
         "project_id": "your-project-id",
         "private_key_id": "your-private-key-id",
-    ```
-    Sample `.creds` file:
-    ```sh
-  {
-        "type": "service_account",
-        "project_id": "your-project-name",
-        "private_key_id": "1234..keyid",
-        "private_key": "-----BEGIN PRIVATE KEY-----\privateKey]\n-----END PRIVATE KEY-----\n",
-        "client_email": "email@your-project-name.iam.gserviceaccount.com",
-        "client_id": "12243..clientid",
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/email@your-project-name.iam.gserviceaccount.com",
-        "universe_domain": "googleapis.com"
-      }
     ```
 
 3. **Build the project:**
