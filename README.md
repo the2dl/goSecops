@@ -1,10 +1,16 @@
 # goSecOps - Review detections & let LLM generate summaries
 
-This tool is designed to fetch security rules and detections from Google Chronicle, analyze the detections using an AI model (Claude), and provide a detailed summary of the findings. It also integrates with VirusTotal to check file hashes for malicious indicators.
+This tool is designed to fetch security rules and detections from Google SecOps, analyze the detections using an AI model (Claude), and provide a detailed summary of the findings. It also integrates with VirusTotal to check file hashes for malicious indicators.
+
+## Why?
+
+Because working in a terminal is faster and more efficient (for me at least).
+
+![Summary Window](img/4.png)
 
 ## Features
 
-- Fetch security rules from Google Chronicle.
+- Fetch security rules from Google SecOps.
 - Search and filter rules.
 - Fetch detections for a selected rule.
 - Generate AI-based summaries for detections.
@@ -89,8 +95,13 @@ Set the following environment variables:
 ## Usage
 
 - **Search Rules:** Use the search input to filter rules by name or ID.
+![Search](img/1.png)
 - **View Detections:** Select a rule and press `Enter` to view detections for the last 7 days.
+![Detections](img/2.png)
 - **View Detection Summary:** Select a detection and press `Enter` to generate and view the AI-based summary.
+![Summary](img/3.png)
+
+![Summary Window](img/4.png)
 - **Navigate:** Use `Tab` to switch focus between the search input and the list. Press `Esc` to go back or exit.
 
 ## License
